@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import type { ResourceConfig } from '@/config';
 import { columnEntries, fieldName, formatCell, label, type Row } from './format';
 import { StatusBadge } from './StatusBadge';
@@ -8,9 +9,14 @@ type Props = {
   rows: Row[];
   /** Detail-page link for a row; rows are plain text when omitted. */
   hrefFor?: (row: Row) => string;
+  /**
+   * Interactive cell for a column, e.g. the inline flag toggle. Returning
+   * null (or omitting the prop) falls back to the formatted value.
+   */
+  renderCell?: (column: string, row: Row) => ReactNode | null;
 };
 
-export function ResourceTable({ config, rows, hrefFor }: Props) {
+export function ResourceTable({ config, rows, hrefFor, renderCell }: Props) {
   const columns = columnEntries(config);
 
   return (
@@ -41,9 +47,12 @@ export function ResourceTable({ config, rows, hrefFor }: Props) {
               </td>
               {columns.map(([column, columnConfig]) => {
                 const value = row[fieldName(column)];
+                const custom = renderCell?.(column, row) ?? null;
                 return (
                   <td key={column} className="px-3 py-2">
-                    {columnConfig.type === 'status' ? (
+                    {custom ? (
+                      custom
+                    ) : columnConfig.type === 'status' ? (
                       <StatusBadge status={String(value)} />
                     ) : (
                       formatCell(value, columnConfig)

@@ -2,10 +2,11 @@
 
 import { revalidatePath } from 'next/cache';
 import { getResourceConfig, type ResourceName } from '@/config';
-import { dal, statusForError } from '@/lib/data';
+import { dal, statusForError, type ChainVerification } from '@/lib/data';
 import { currentUser } from './current-user';
 
 export type ActionResult = { ok: boolean; status: number; message: string };
+export type VerifyResult = ActionResult & { verification?: ChainVerification };
 
 function describe(error: unknown): ActionResult {
   const status = statusForError(error);
@@ -36,6 +37,55 @@ export async function transitionAction(
     const parked = getResourceConfig(resource).transitions[name]?.requiresApproval;
     const outcome = parked ? 'parked for a second approver' : 'applied';
     return { ok: true, status: 200, message: `${name} ${outcome} — status is now ${after.status}` };
+  } catch (error) {
+    return describe(error);
+  }
+}
+
+/**
+ * Inline enabled-toggle for /flags. It is a plain audited update: the DAL
+ * checks feature_flags:update and writes the audit row in the same
+ * transaction, so a user without the permission gets a 403 here.
+ */
+export async function toggleFlagAction(
+  _previous: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const user = currentUser();
+  if (!user) return { ok: false, status: 401, message: 'No session — pick a user first' };
+
+  const id = Number(formData.get('id'));
+  const enabled = formData.get('enabled') === 'true';
+
+  try {
+    const after = await dal.resource('feature_flags', { actor: user.actor }).update(id, { enabled });
+    revalidatePath('/flags');
+    revalidatePath(`/flags/${id}`);
+    revalidatePath('/audit');
+    return {
+      ok: true,
+      status: 200,
+      message: `${String(after.key)} is now ${after.enabled ? 'enabled' : 'disabled'}`,
+    };
+  } catch (error) {
+    return describe(error);
+  }
+}
+
+/** Runs the audit hash-chain verification for the Audit Explorer. */
+export async function verifyChainAction(
+  _previous: VerifyResult | null,
+  _formData: FormData,
+): Promise<VerifyResult> {
+  const user = currentUser();
+  if (!user) return { ok: false, status: 401, message: 'No session — pick a user first' };
+
+  try {
+    const verification = await dal.audit({ actor: user.actor }).verifyChain();
+    const message = verification.ok
+      ? `Chain OK — ${verification.rows} rows verified`
+      : `Chain BROKEN at row ${verification.brokenRowId} — expected ${verification.expected}, found ${verification.found}`;
+    return { ok: verification.ok, status: 200, message, verification };
   } catch (error) {
     return describe(error);
   }
