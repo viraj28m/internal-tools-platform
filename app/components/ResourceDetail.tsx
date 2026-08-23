@@ -10,9 +10,11 @@ type Props = {
   record: Row;
   /** Roles held by the session, used to reflect what the DAL would allow. */
   roles: string[];
+  /** Session subject, used to drop a previous actor's action result on a user switch. */
+  actorKey: string;
 };
 
-export function ResourceDetail({ resource, config, record, roles }: Props) {
+export function ResourceDetail({ resource, config, record, roles, actorKey }: Props) {
   const options = transitionOptions(config, String(record.status ?? ''), roles);
 
   return (
@@ -40,7 +42,12 @@ export function ResourceDetail({ resource, config, record, roles }: Props) {
       </dl>
 
       <h3 className="mb-2 text-sm font-semibold uppercase text-gray-600">Transitions</h3>
-      <TransitionButtons resource={resource} id={Number(record.id)} options={options} />
+      <TransitionButtons
+        key={actorKey}
+        resource={resource}
+        id={Number(record.id)}
+        options={options}
+      />
     </section>
   );
 }

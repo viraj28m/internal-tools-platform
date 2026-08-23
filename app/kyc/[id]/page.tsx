@@ -33,11 +33,11 @@ export default async function KycCasePage({ params }: { params: { id: string } }
         ← back to the queue
       </Link>
       <ResourceDetail
-        key={`${user.session.sub}-${params.id}`}
         resource="kyc_cases"
         config={config}
         record={record}
         roles={user.session.roles}
+        actorKey={`${user.session.sub}-${params.id}`}
       />
       <AuditPanel resource="kyc_cases" recordId={id} />
     </>
