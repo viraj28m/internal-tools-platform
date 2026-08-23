@@ -188,6 +188,19 @@ describe('SPEC §7.12 — feature flags', () => {
       403,
     );
   });
+
+  it('rejects editing a column the config does not mark editable', async () => {
+    const [flag] = await dal.resource('feature_flags', { actor: dev }).list();
+    const flagId = flag.id as number;
+
+    await expectStatus(
+      dal.resource('feature_flags', { actor: dev }).update(flagId, { key: 'tmp_probe_key' }),
+      400,
+    );
+
+    const unchanged = await dal.resource('feature_flags', { actor: dev }).get(flagId);
+    expect(unchanged.key).toBe(flag.key);
+  });
 });
 
 describe('SPEC §7.8 — a failing audit insert rolls the mutation back', () => {

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint --dir app --dir lib --dir config --dir scripts --dir tests",
+    "lint": "eslint . --ext .ts,.tsx --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "db:reset": "tsx scripts/db-reset.ts",
     "db:migrate": "tsx scripts/migrate.ts",

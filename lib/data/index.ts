@@ -49,6 +49,15 @@ async function requireRole(
   }
 }
 
+/**
+ * Column configs are written in the database's snake_case, while callers pass
+ * Drizzle's camelCase field names; both spellings map to the same column.
+ */
+function isEditable(config: ResourceConfig, column: string): boolean {
+  const snake = column.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+  return Boolean(config.columns[column]?.editable ?? config.columns[snake]?.editable);
+}
+
 async function loadRow(tx: Database, resource: ResourceName, id: number): Promise<Row> {
   const table = tableFor(resource);
   const rows = await tx
@@ -210,6 +219,12 @@ class ResourceApi {
       throw badRequest('Status changes must go through transition()');
     }
     if (Object.keys(patch).length === 0) throw badRequest('Empty patch');
+
+    for (const column of Object.keys(patch)) {
+      if (!isEditable(this.config, column)) {
+        throw badRequest(`Column '${column}' is not editable on ${this.resource}`);
+      }
+    }
 
     return getDb().transaction(async (tx) => {
       const permissionUsed = await requirePermission(tx, this.actor, this.resource, 'update');
