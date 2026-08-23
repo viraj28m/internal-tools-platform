@@ -1,0 +1,38 @@
+{
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "pg",
+            "message": "Database access belongs in /lib/data (the DAL). Use the DAL's API instead."
+          },
+          {
+            "name": "drizzle-orm/node-postgres",
+            "message": "Database access belongs in /lib/data (the DAL). Use the DAL's API instead."
+          }
+        ],
+        "patterns": [
+          {
+            "group": [
+              "@/lib/data/db",
+              "@/lib/data/admin",
+              "**/lib/data/db",
+              "**/lib/data/admin"
+            ],
+            "message": "Database access belongs in /lib/data (the DAL). Use the DAL's API instead."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["lib/data/**"],
+      "rules": { "no-restricted-imports": "off" }
+    }
+  ],
+  "ignorePatterns": ["node_modules", ".next", "drizzle"]
+}
