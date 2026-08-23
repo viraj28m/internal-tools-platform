@@ -22,7 +22,7 @@ export async function resetDatabase(): Promise<void> {
     const exists = await client.query('select 1 from pg_roles where rolname = $1', [role]);
     const action = exists.rowCount ? 'alter role' : 'create role';
     const ddl = await client.query<{ statement: string }>(
-      `select format('${action} %I login password %L', $1, $2) as statement`,
+      `select format('${action} %I login password %L', $1::text, $2::text) as statement`,
       [role, password],
     );
     await client.query(ddl.rows[0].statement);
