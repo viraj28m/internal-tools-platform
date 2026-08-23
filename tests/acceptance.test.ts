@@ -45,8 +45,9 @@ afterAll(async () => {
 
 describe('SPEC §7.1 — migrations + seed', () => {
   it('seeds users, cases, refunds and flags', async () => {
-    expect(Object.keys(users).sort()).toEqual(['alice', 'bob', 'dana', 'dev', 'evan']);
+    expect(Object.keys(users).sort()).toEqual(['alice', 'bob', 'dana', 'dev', 'evan', 'sara']);
     expect(users.dev.roles.sort()).toEqual(['admin', 'engineer']);
+    expect(users.sara.roles).toEqual(['senior_analyst']);
     expect((await dal.resource('kyc_cases', { actor: alice }).list()).length).toBe(20);
     expect((await dal.resource('refunds', { actor: dana }).list()).length).toBe(10);
     expect((await dal.resource('feature_flags', { actor: dev }).list()).length).toBe(5);

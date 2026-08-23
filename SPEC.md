@@ -220,8 +220,10 @@ Styling: default Tailwind, minimal. Zero effort on visual polish.
 
 ## §8 Seed data
 
-Users: alice (senior_analyst), bob (analyst), dana (support_lead),
-evan (support_agent), dev (engineer + admin).
+Users: alice (senior_analyst), sara (senior_analyst), bob (analyst),
+dana (support_lead), evan (support_agent), dev (engineer + admin).
+Two senior_analysts so maker-checker approvals can be exercised end to end
+from a clean seed.
 ~20 kyc_cases across statuses and risk scores; ~10 refunds across statuses
 with varying amounts; 5 feature_flags. All data obviously fake
 (e.g. "Test Customer 4417"); no real names or keys anywhere.
