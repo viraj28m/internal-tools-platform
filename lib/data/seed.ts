@@ -21,6 +21,8 @@ const ROLE_NAMES = [
 
 const SEED_USERS = [
   { email: 'alice@example.test', name: 'Alice Example', roles: ['senior_analyst'] },
+  // Second senior_analyst so maker-checker approvals work from a clean seed.
+  { email: 'sara@example.test', name: 'Sara Example', roles: ['senior_analyst'] },
   { email: 'bob@example.test', name: 'Bob Example', roles: ['analyst'] },
   { email: 'dana@example.test', name: 'Dana Example', roles: ['support_lead'] },
   { email: 'evan@example.test', name: 'Evan Example', roles: ['support_agent'] },
