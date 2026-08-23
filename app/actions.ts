@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getResourceConfig, type ResourceName } from '@/config';
 import { dal, statusForError } from '@/lib/data';
 import { currentUser } from './current-user';
+import { resourcePath } from './resource-paths';
 
 export type ActionResult = { ok: boolean; status: number; message: string };
 
@@ -30,8 +31,11 @@ export async function transitionAction(
 
   try {
     const after = await dal.resource(resource, { actor: user.actor }).transition(id, name);
-    revalidatePath(`/kyc/${id}`);
-    revalidatePath('/kyc');
+    const base = resourcePath(resource);
+    if (base) {
+      revalidatePath(base);
+      revalidatePath(`${base}/${id}`);
+    }
     revalidatePath('/approvals');
     const parked = getResourceConfig(resource).transitions[name]?.requiresApproval;
     const outcome = parked ? 'parked for a second approver' : 'applied';
@@ -57,8 +61,11 @@ export async function pendingDecisionAction(
     const resolved =
       decision === 'reject' ? await pending.reject(pendingId) : await pending.approve(pendingId);
     revalidatePath('/approvals');
-    revalidatePath('/kyc');
-    revalidatePath(`/kyc/${resolved.recordId}`);
+    const base = resourcePath(String(resolved.resource));
+    if (base) {
+      revalidatePath(base);
+      revalidatePath(`${base}/${resolved.recordId}`);
+    }
     return { ok: true, status: 200, message: `Pending action ${pendingId} ${resolved.status}` };
   } catch (error) {
     return describe(error);

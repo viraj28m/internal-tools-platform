@@ -9,6 +9,7 @@ const config: ResourceConfig = {
     amount_cents: { label: 'Amount', type: 'money' },
     reason: { label: 'Reason', editable: true },
     status: { type: 'status' },
+    processor_ref: { label: 'Processor ref' },
   },
   permissions: {
     view: ['support_agent', 'support_lead', 'admin'],

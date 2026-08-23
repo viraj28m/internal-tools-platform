@@ -14,6 +14,9 @@ export async function TopNav() {
         <Link href="/kyc" className="underline">
           KYC
         </Link>
+        <Link href="/refunds" className="underline">
+          Refunds
+        </Link>
         <Link href="/approvals" className="underline">
           Approvals
         </Link>
