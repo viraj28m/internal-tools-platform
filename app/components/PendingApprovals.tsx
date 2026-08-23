@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { dal, statusForError } from '@/lib/data';
 import { listUsers } from '@/lib/data/users';
 import { currentUser } from '../current-user';
+import { resourcePath } from '../resource-paths';
 import { PendingDecisionButtons } from './PendingDecisionButtons';
 
 /** Actions parked for approval that the current user is allowed to see. */
@@ -30,8 +31,8 @@ export async function PendingApprovals() {
   return (
     <ul className="space-y-4">
       {items.map((item) => {
-        const recordHref =
-          item.resource === 'kyc_cases' ? `/kyc/${String(item.recordId)}` : undefined;
+        const base = resourcePath(String(item.resource));
+        const recordHref = base ? `${base}/${String(item.recordId)}` : undefined;
         return (
           <li key={String(item.id)} className="rounded border border-gray-300 p-4">
             <div className="mb-2 flex flex-wrap gap-x-3 text-sm">
