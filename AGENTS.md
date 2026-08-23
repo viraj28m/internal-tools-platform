@@ -63,6 +63,8 @@ every app inherits them. Preserve that property in everything you build.
 
 ## Workflow
 
+- All work happens on feature branches; deliver via PR against main; never
+  push directly to main.
 - Before declaring any task done: `npm run lint` (includes the DAL guard),
   migrations + seed from a clean database, and the acceptance tests in
   SPEC.md §7 must pass.
