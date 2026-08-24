@@ -53,16 +53,17 @@ reads back a session for every seed user.
 
 ## Tour
 
-| Route | What it does | Status |
-| --- | --- | --- |
-| `/kyc` | Case queue table → case detail with audit panel and config-driven transitions. | Built |
-| `/refunds` | Refund table → detail; `submit` parks for approval, `execute` calls the mock processor. | Built |
-| `/approvals` | Pending actions awaiting the current user; self-initiated items marked unapprovable. | Built |
-| `/flags` | Flag table with an inline audited enabled-toggle. | Specified (SPEC §6), not built |
-| `/audit` | Audit explorer: cross-app log, filters, before/after JSON, chain verification. | Specified (SPEC §6), not built |
-| `/access` | Read-only matrix of roles × resources × actions, and who holds each role. | Specified (SPEC §6), not built |
+| Route | What it does |
+| --- | --- |
+| `/kyc` | Case queue table → case detail with audit panel and config-driven transitions. |
+| `/refunds` | Refund table → detail; `submit` parks for approval, `execute` calls the mock processor. |
+| `/approvals` | Pending actions awaiting the current user; self-initiated items marked unapprovable. |
+| `/flags` | Flag table with an inline enabled-toggle; each toggle is a plain audited update. |
+| `/audit` | Audit explorer: cross-app log filtered by actor, resource and date range, rows expanding to before/after JSON, plus a "Verify chain" button. |
+| `/access` | Access explorer: read-only `role_permissions` matrix of roles × resources × actions, and who holds each role. |
 
-Seed users (switch between them with the user-switcher in the top nav):
+Every page needs a user picked in the user-switcher in the top nav; without a
+session the routes render a prompt instead of data. Seed users:
 
 | User | Roles | Demonstrates |
 | --- | --- | --- |
