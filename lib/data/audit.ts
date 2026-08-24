@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { asc, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, lte, sql, type SQL } from 'drizzle-orm';
 import { getDb, type Database } from './db';
 import { auditLog } from './schema';
 import { shouldFailAuditInsert } from './test-hooks';
@@ -110,6 +110,54 @@ export async function insertAuditRow(tx: Database, entry: AuditEntry): Promise<v
     reason: entry.reason ?? null,
     prevHash: chainHash(previousHash, content),
   });
+}
+
+export type AuditFilters = {
+  actorId?: number;
+  resource?: string;
+  /** Inclusive lower/upper bounds on audit_log.at, in UTC. */
+  from?: Date;
+  to?: Date;
+};
+
+export type AuditRow = {
+  id: number;
+  actorId: number;
+  at: Date;
+  resource: string;
+  recordId: string;
+  action: string;
+  permissionUsed: string;
+  before: unknown;
+  after: unknown;
+  reason: string | null;
+  prevHash: string;
+};
+
+const AUDIT_PAGE_SIZE = 200;
+
+/**
+ * Cross-app audit history, newest first, restricted to the resources the
+ * caller is allowed to see. Callers resolve that list from role_permissions.
+ */
+export async function queryAuditLog(
+  db: Database,
+  resources: string[],
+  filters: AuditFilters = {},
+): Promise<AuditRow[]> {
+  const conditions: SQL[] = [inArray(auditLog.resource, resources)];
+  if (filters.actorId !== undefined) conditions.push(eq(auditLog.actorId, filters.actorId));
+  if (filters.from) conditions.push(gte(auditLog.at, filters.from));
+  if (filters.to) conditions.push(lte(auditLog.at, filters.to));
+
+  const rows = await db
+    .select()
+    .from(auditLog)
+    .where(and(...conditions))
+    .orderBy(desc(auditLog.id))
+    .limit(AUDIT_PAGE_SIZE);
+
+  return rows as AuditRow[];
 }
 
 export type ChainVerification =

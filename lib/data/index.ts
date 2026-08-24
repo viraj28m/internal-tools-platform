@@ -1,7 +1,20 @@
 import { and, desc, eq, type SQL } from 'drizzle-orm';
-import { getResourceConfig, type ResourceConfig, type ResourceName } from '@/config';
+import {
+  getResourceConfig,
+  resourceConfigs,
+  type ResourceConfig,
+  type ResourceName,
+} from '@/config';
 import { getProcessor } from '@/lib/processor';
-import { insertAuditRow } from './audit';
+import { readAccessMatrix, type AccessMatrix } from './access';
+import {
+  insertAuditRow,
+  queryAuditLog,
+  verifyAuditChain,
+  type AuditFilters,
+  type AuditRow,
+  type ChainVerification,
+} from './audit';
 import { getDb, type Database } from './db';
 import { badRequest, conflict, DalError, forbidden, notFound } from './errors';
 import { actorRoleNames, hasPermission } from './permissions';
@@ -12,7 +25,8 @@ export type Actor = { id: number };
 export type { Database } from './db';
 export { closeDb } from './db';
 export { DalError } from './errors';
-export { verifyAuditChain, type ChainVerification } from './audit';
+export { verifyAuditChain, type AuditFilters, type AuditRow, type ChainVerification } from './audit';
+export type { AccessMatrix, RoleHolder } from './access';
 export { forceAuditInsertFailure } from './test-hooks';
 
 const PENDING_STATUS = 'pending_approval';
@@ -424,6 +438,63 @@ class PendingApi {
   }
 }
 
+/**
+ * Cross-app audit history for the Audit Explorer. Visibility follows the same
+ * role_permissions view grants the per-record AuditPanel uses.
+ */
+class AuditApi {
+  constructor(private readonly actor: Actor) {}
+
+  /** Resources whose audit rows this actor may read; 403 when none. */
+  private async visibleResources(db: Database): Promise<ResourceName[]> {
+    const visible: ResourceName[] = [];
+    for (const resource of Object.keys(resourceConfigs) as ResourceName[]) {
+      if (await hasPermission(db, this.actor.id, resource, 'view')) visible.push(resource);
+    }
+    if (visible.length === 0) {
+      throw forbidden(`Actor ${this.actor.id} may not view any resource's audit history`);
+    }
+    return visible;
+  }
+
+  async list(filters: AuditFilters = {}): Promise<AuditRow[]> {
+    const db = getDb();
+    const visible = await this.visibleResources(db);
+
+    if (filters.resource) {
+      if (!visible.includes(filters.resource as ResourceName)) {
+        throw forbidden(`Actor ${this.actor.id} lacks permission ${filters.resource}:view`);
+      }
+      return queryAuditLog(db, [filters.resource], filters);
+    }
+    return queryAuditLog(db, visible, filters);
+  }
+
+  /**
+   * Recomputes the whole hash chain. The chain is one sequence across apps, so
+   * it is verified in full — only the decision to run it is permission-gated.
+   */
+  async verifyChain(): Promise<ChainVerification> {
+    const db = getDb();
+    await this.visibleResources(db);
+    return verifyAuditChain(db);
+  }
+}
+
+/** Read-only view of role_permissions and who holds each role. */
+class AccessApi {
+  constructor(private readonly actor: Actor) {}
+
+  async matrix(): Promise<AccessMatrix> {
+    const db = getDb();
+    const roles = await actorRoleNames(db, this.actor.id);
+    if (roles.length === 0) {
+      throw forbidden(`Actor ${this.actor.id} holds no role and may not read the access matrix`);
+    }
+    return readAccessMatrix(db);
+  }
+}
+
 function requireActor(options: { actor?: Actor }): Actor {
   const actor = options?.actor;
   if (!actor || typeof actor.id !== 'number') {
@@ -439,6 +510,12 @@ export const dal = {
   },
   pending(options: { actor: Actor }): PendingApi {
     return new PendingApi(requireActor(options));
+  },
+  audit(options: { actor: Actor }): AuditApi {
+    return new AuditApi(requireActor(options));
+  },
+  access(options: { actor: Actor }): AccessApi {
+    return new AccessApi(requireActor(options));
   },
 };
 

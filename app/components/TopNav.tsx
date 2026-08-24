@@ -20,6 +20,15 @@ export async function TopNav() {
         <Link href="/approvals" className="underline">
           Approvals
         </Link>
+        <Link href="/flags" className="underline">
+          Flags
+        </Link>
+        <Link href="/audit" className="underline">
+          Audit
+        </Link>
+        <Link href="/access" className="underline">
+          Access
+        </Link>
       </nav>
       <div className="ml-auto">
         <UserSwitcher users={users} currentEmail={user?.session.email ?? null} />
